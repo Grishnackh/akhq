@@ -4,6 +4,8 @@ import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import org.akhq.Breed;
 import org.akhq.Cat;
 import org.akhq.models.decorators.AvroKeySchemaRecord;
+import org.akhq.utils.Album;
+import org.akhq.utils.AlbumProto;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -13,6 +15,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -93,6 +98,23 @@ public class RecordTest {
     }
 
     @Test
+    public void testKeyIsProtobufSerialized() {
+
+        // GIVEN a record with a serialized key
+        byte[] keyBytes = anAlbumExample().toByteArray();
+        byte[] valueBytes = "".getBytes(StandardCharsets.UTF_8); // value property does not matter
+
+        ConsumerRecord<byte[], byte[]> kafkaRecord = new ConsumerRecord<>("topic", 0, 0, keyBytes, valueBytes);
+        Record record = new Record(kafkaRecord, 1, null);
+
+        // WHEN getKey() method is called
+        String key = record.getKey();
+
+        // EXPECT a string representation of the key bytes
+        assertThat(key, is(new String(anAlbumExample().toByteArray())));
+    }
+
+    @Test
     public void testKeyIsProtobufSerializedWithDecorator() {
 
         // GIVEN a record with a protobuf serialized key
@@ -134,6 +156,21 @@ public class RecordTest {
                 .set("id", id)
                 .set("name", name)
                 .set("breed", breed)
+                .build();
+    }
+
+    /**
+     * Method returns a protobuf example data object with an album schema
+     */
+    private AlbumProto.Album anAlbumExample() {
+        List<String> artists = Collections.singletonList("Imagine Dragons");
+        List<String> songTitles = Arrays.asList("Birds", "Zero", "Natural", "Machine");
+        Album album = new Album("Origins", artists, 2018, songTitles);
+        return AlbumProto.Album.newBuilder()
+                .setTitle(album.getTitle())
+                .addAllArtist(album.getArtists())
+                .setReleaseYear(album.getReleaseYear())
+                .addAllSongTitle(album.getSongsTitles())
                 .build();
     }
 }
