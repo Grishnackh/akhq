@@ -38,10 +38,21 @@ public class RecordTest {
     @Test
     public void testKeyIsAvroSerialized() {
 
+        // Testdata
+        String avroCatExampleJson = "{\"id\":10,\"name\":\"Tom\",\"breed\":\"SPHYNX\"}";
+
         // GIVEN a record with avro serialized key
+        byte[] keyBytes = avroCatExampleJson.getBytes(StandardCharsets.UTF_8);
+        byte[] valueBytes = "".getBytes(StandardCharsets.UTF_8); // value property does not matter
+
+        ConsumerRecord<byte[], byte[]> kafkaRecord = new ConsumerRecord<>("topic", 0, 0, keyBytes, valueBytes);
+        Record record = new Record(kafkaRecord, 1, null);
+
         // WHEN getKey() method is called
+        String key = record.getKey();
+
         // EXPECT a string representation of the key bytes
-        Assertions.fail();
+        assertThat(key, is(avroCatExampleJson));
     }
 
     @Test
