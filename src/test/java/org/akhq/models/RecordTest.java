@@ -41,6 +41,26 @@ public class RecordTest {
     }
 
     @Test
+    public void testKeyIsSimpleString() {
+
+        // Test data
+        String keyTestData = "TEST KEY §$%&/öüä?!";
+
+        // GIVEN a record with a simple string key
+        byte[] keyBytes = keyTestData.getBytes();
+        byte[] valueBytes = null; // value property does not matter
+
+        ConsumerRecord<byte[], byte[]> kafkaRecord = new ConsumerRecord<>("topic", 0, 0, keyBytes, valueBytes);
+        Record record = new Record(kafkaRecord, null, null);
+
+        // WHEN getKey() method is called
+        String key = record.getKey(); // NOTICE: getKey() does not decode UTF-8 by default
+
+        // EXPECT a string result with given key
+        assertThat(key, is(keyTestData));
+    }
+
+    @Test
     public void testKeyIsAvroSerialized() {
 
         // Testdata
@@ -117,6 +137,26 @@ public class RecordTest {
 
         // EXPECT NULL result
         Assertions.assertNull(value);
+    }
+
+    @Test
+    public void testValueIsSimpleString() {
+
+        // Test data
+        String valueTestData = "TEST VALUE §$%&/öüä?!";
+
+        // GIVEN a record with a simple string value
+        byte[] keyBytes = null; // key property does not matter
+        byte[] valueBytes = valueTestData.getBytes();
+
+        ConsumerRecord<byte[], byte[]> kafkaRecord = new ConsumerRecord<>("topic", 0, 0, keyBytes, valueBytes);
+        Record record = new Record(kafkaRecord, null, null);
+
+        // WHEN getValue() is called
+        String value = record.getValue(); // NOTICE: getValue() does not decode UTF-8 by default
+
+        // EXPECT given simple string value
+        assertThat(value, is(valueTestData));
     }
 
     @Test
