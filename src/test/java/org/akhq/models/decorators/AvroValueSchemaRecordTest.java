@@ -10,6 +10,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 
 import java.nio.charset.StandardCharsets;
 
@@ -37,6 +38,30 @@ public class AvroValueSchemaRecordTest {
         record = new AvroKeySchemaRecord(record, aMockedAvroDeserializer);
 
         // EXPECT getValue() to return a String with original json content
+        assertThat(record.getValue(), is(avroCatExampleJson));
+    }
+
+    @Test
+    public void testGetValueAvroSerializedFallback() {
+
+        // Test data
+        String avroCatExampleJson = "{\"id\":10,\"name\":\"Tom\",\"breed\":\"SPHYNX\"}";
+
+        // GIVEN a record with avro serialized value bytes
+        byte[] keyBytes = null; // key does not matter for this test
+        byte[] valueBytes = avroCatExampleJson.getBytes(StandardCharsets.UTF_8);
+        ConsumerRecord<byte[], byte[]> kafkaRecord = new ConsumerRecord<>("topic", 0, 0, keyBytes, valueBytes);
+        Record record = new Record(kafkaRecord, 1, 2);
+
+        // AND decorated wit an avro deserializer decorator
+        Deserializer<Object> aMockedAvroDeserializer = Mockito.mock(KafkaAvroDeserializer.class);
+        record = new AvroKeySchemaRecord(record, aMockedAvroDeserializer);
+
+        // WHEN avro deserializer throws an exception
+        Mockito.when(aMockedAvroDeserializer.deserialize(Mockito.any(), Mockito.any()))
+                .then(invocation -> { throw new NullPointerException("Exception"); });
+
+        // EXPECT getValue() returns a string representation of the value bytes
         assertThat(record.getValue(), is(avroCatExampleJson));
     }
 
