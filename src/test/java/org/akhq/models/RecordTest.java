@@ -103,6 +103,22 @@ public class RecordTest {
         assertThat(key, is(new String(anAlbumExample().toByteArray())));
     }
 
+    @Test
+    public void testValueByteArrayIsNull() {
+
+        // GIVEN a record with null value
+        byte[] keyBytes = "".getBytes(StandardCharsets.UTF_8); // key property does not matter
+        byte[] valueBytes = null;
+        ConsumerRecord<byte[], byte[]> kafkaRecord = new ConsumerRecord<>("topic", 0, 0, keyBytes, valueBytes);
+        Record record = new Record(kafkaRecord, null, null);
+
+        // WHEN getValue() is called
+        String value = record.getValue();
+
+        // EXPECT NULL result
+        Assertions.assertNull(value);
+    }
+
     /**
      * Method returns an avro example data object with a cat schema
      */
