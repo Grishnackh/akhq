@@ -8,6 +8,7 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.Deserializer;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -19,6 +20,7 @@ import static org.hamcrest.Matchers.is;
 public class AvroKeySchemaRecordTest {
 
     @Test
+    @Tag("UnitTest")
     public void testGetKeyAvroDeserialized() {
 
         // Test data preparation
