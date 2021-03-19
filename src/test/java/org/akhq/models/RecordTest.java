@@ -87,17 +87,6 @@ public class RecordTest {
     }
 
     @Test
-    public void testKeyIsAvroSerializedFallbackWithDecorator() {
-
-        // GIVEN a record with an avro serialized key
-        // AND a schema id is given
-        // WHEN getKey() method is called
-        // AND kafka avro deserializer throws an exception
-        // EXPECT a string representation of the key bytes as result
-        Assertions.fail();
-    }
-
-    @Test
     public void testKeyIsProtobufSerialized() {
 
         // GIVEN a record with a serialized key
@@ -112,40 +101,6 @@ public class RecordTest {
 
         // EXPECT a string representation of the key bytes
         assertThat(key, is(new String(anAlbumExample().toByteArray())));
-    }
-
-    @Test
-    public void testKeyIsProtobufSerializedWithDecorator() {
-
-        // GIVEN a record with a protobuf serialized key
-        // AND no schema id is given
-        // AND protobufToJsonDeserializer exists
-        // WHEN getKey() method is called
-        // EXPECT a protobuf deserialized value in String type as result
-        Assertions.fail();
-    }
-
-    @Test
-    public void testKeyIsProtobufSerializedFallbackWithDecorator() {
-
-        // GIVEN a record with a protobuf serialized key
-        // AND no schema id is given
-        // AND protobufToJsonDeserializer exists
-        // WHEN getKey() method is called
-        // AND protobuf deserializer throws an exception
-        // EXPECT a string representation of the key bytes as result
-        Assertions.fail();
-    }
-
-    @Test
-    public void testKeyDefaultFallbackWithDecorator() {
-
-        // GIVEN a record with a protobuf serialized key
-        // AND no schema id exists
-        // AND no protobufToJsonDeserializer exists
-        // WHEN getKey() method is called
-        // EXPECT a string representation of the key bytes as result
-        Assertions.fail();
     }
 
     /**
