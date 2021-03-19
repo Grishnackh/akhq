@@ -42,6 +42,31 @@ public class AvroKeySchemaRecordTest {
         assertThat(decoratedRecord.getKey(), is(avroCatExampleJson));
     }
 
+    @Test
+    @Tag("UnitTest")
+    public void testGetKeyAvroSerializedFallback() {
+
+        // Test data
+        String avroCatExampleJson = "{\"id\":10,\"name\":\"Tom\",\"breed\":\"SPHYNX\"}";
+
+        // GIVEN a record with avro serialized key bytes
+        byte[] keyBytes = avroCatExampleJson.getBytes(StandardCharsets.UTF_8);
+        byte[] valueBytes = null; // value does not matter for this test
+        ConsumerRecord<byte[], byte[]> kafkaRecord = new ConsumerRecord<>("topic", 0, 0, keyBytes, valueBytes);
+        Record record = new Record(kafkaRecord, 1, 2);
+
+        // AND decorated with an avro deserializer decorator
+        Deserializer<Object> aMockedAvroDeserializer = Mockito.mock(KafkaAvroDeserializer.class);
+        record = new AvroKeySchemaRecord(record, aMockedAvroDeserializer);
+
+        // WHEN avro deserializer throws an exception
+        Mockito.when(aMockedAvroDeserializer.deserialize(Mockito.any(), Mockito.any()))
+                .then(invocation -> { throw new NullPointerException("Exception"); });
+
+        // EXPECT getKey() returns a string representation of the value bytes
+        assertThat(record.getKey(), is(avroCatExampleJson));
+    }
+
     /**
      * Method returns an avro example data object with a cat schema
      */
