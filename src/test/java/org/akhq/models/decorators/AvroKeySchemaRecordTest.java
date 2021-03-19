@@ -21,7 +21,7 @@ public class AvroKeySchemaRecordTest {
 
     @Test
     @Tag("UnitTest")
-    public void testGetKeyAvroDeserialized() {
+    public void testGetKeyAvroSerialized() {
 
         // Test data preparation
         String avroCatExampleJson = "{\"id\":10,\"name\":\"Tom\",\"breed\":\"SPHYNX\"}";
