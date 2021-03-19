@@ -119,6 +119,43 @@ public class RecordTest {
         Assertions.assertNull(value);
     }
 
+    @Test
+    public void testValueIsAvroSerialized() {
+
+        // Testdata
+        String avroCatExampleJson = "{\"id\":10,\"name\":\"Tom\",\"breed\":\"SPHYNX\"}";
+
+        // GIVEN a record with an avro serialized value
+        byte[] keyBytes = "".getBytes(StandardCharsets.UTF_8); // key property does not matter
+        byte[] valueBytes = avroCatExampleJson.getBytes(StandardCharsets.UTF_8);
+
+        ConsumerRecord<byte[], byte[]> kafkaRecord = new ConsumerRecord<>("topic", 0, 0, keyBytes, valueBytes);
+        Record record = new Record(kafkaRecord, 1, null);
+
+        // WHEN getValue() is called
+        String value = record.getValue();
+
+        // EXPECT a string representation of the value
+        assertThat(value, is(avroCatExampleJson));
+    }
+
+    @Test
+    public void testValueIsProtobufSerialized() {
+
+        // GIVEN a record with a protobuf serialized value
+        byte[] keyBytes = "".getBytes(StandardCharsets.UTF_8); // key property does not matter
+        byte[] valueBytes = anAlbumExample().toByteArray();
+
+        ConsumerRecord<byte[], byte[]> kafkaRecord = new ConsumerRecord<>("topic", 0, 0, keyBytes, valueBytes);
+        Record record = new Record(kafkaRecord, 1, null);
+
+        // WHEN getValue() is called
+        String value = record.getValue();
+
+        // EXPECT a string representation of the value bytes
+        assertThat(value, is(new String(anAlbumExample().toByteArray())));
+    }
+
     /**
      * Method returns an avro example data object with a cat schema
      */
