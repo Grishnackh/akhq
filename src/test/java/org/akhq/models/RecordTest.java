@@ -11,6 +11,7 @@ import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -25,6 +26,7 @@ import static org.hamcrest.Matchers.is;
 public class RecordTest {
 
     @Test
+    @Tag("UnitTest")
     public void testKeyByteArrayIsNull() {
 
         // GIVEN a record with null in key
@@ -41,6 +43,7 @@ public class RecordTest {
     }
 
     @Test
+    @Tag("UnitTest")
     public void testKeyIsSimpleString() {
 
         // Test data
@@ -61,6 +64,7 @@ public class RecordTest {
     }
 
     @Test
+    @Tag("UnitTest")
     public void testKeyIsAvroSerialized() {
 
         // Testdata
@@ -81,6 +85,7 @@ public class RecordTest {
     }
 
     @Test
+    @Tag("UnitTest")
     public void testKeyIsAvroSerializedWithDecorator() {
 
         // Testdata
@@ -107,6 +112,7 @@ public class RecordTest {
     }
 
     @Test
+    @Tag("UnitTest")
     public void testKeyIsProtobufSerialized() {
 
         // GIVEN a record with a serialized key
@@ -124,6 +130,7 @@ public class RecordTest {
     }
 
     @Test
+    @Tag("UnitTest")
     public void testValueByteArrayIsNull() {
 
         // GIVEN a record with null value
@@ -140,6 +147,7 @@ public class RecordTest {
     }
 
     @Test
+    @Tag("UnitTest")
     public void testValueIsSimpleString() {
 
         // Test data
@@ -160,6 +168,7 @@ public class RecordTest {
     }
 
     @Test
+    @Tag("UnitTest")
     public void testValueIsAvroSerialized() {
 
         // Testdata
@@ -180,6 +189,7 @@ public class RecordTest {
     }
 
     @Test
+    @Tag("UnitTest")
     public void testValueIsProtobufSerialized() {
 
         // GIVEN a record with a protobuf serialized value
