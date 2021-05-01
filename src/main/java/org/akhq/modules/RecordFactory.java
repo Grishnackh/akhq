@@ -41,40 +41,88 @@ public class RecordFactory {
         // base record (default: string)
         Record akhqRecord = new Record(record, keySchemaId, valueSchemaId);
 
-        // avro wire format
-        Optional<AvroContentTypeMetaData> avroContentTypeMetaData = avroContentTypeParser.parseAvroContentTypeMetaData(record, schemaRegistryType);
-        if(avroContentTypeMetaData.isPresent()) {
-            AvroContentTypeMetaData avrometa = avroContentTypeMetaData.get();
-            akhqRecord = new AvroWireFormattedRecord(akhqRecord, registryClient, avrometa, schemaRegistryType.getMagicByte());
+        akhqRecord = handleAvroWireFormat(record, akhqRecord, schemaRegistryType, registryClient);
+        akhqRecord = deserialize(akhqRecord, clusterId, keySchemaId, valueSchemaId);
+        akhqRecord = obfuscate(akhqRecord);
+
+        return akhqRecord;
+    }
+
+    private Record obfuscate(Record akhqRecord) {
+        Optional<ObfuscationSearchStrategy> searchStrategy = resolveSearchStrategy();
+        Optional<ObfuscationReplaceStrategy> replaceStrategy = resolveReplaceStrategy();
+
+        if (searchStrategy.isPresent() && replaceStrategy.isPresent()) {
+            return new ObfuscatedRecord(akhqRecord, searchStrategy.get(), replaceStrategy.get());
         }
 
+        return akhqRecord;
+    }
+
+    private Optional<ObfuscationSearchStrategy> resolveSearchStrategy() {
+        Optional<ObfuscationSearchStrategy> searchStrategy;
+        if ("config.key.regex".contains("regex")) {
+            searchStrategy = Optional.of(new RegexObfuscationSearchStrategy("abc"));
+        } else if ("config.key.regex".contains("jsonPath")) {
+            searchStrategy = Optional.of(new JsonPathObfuscationSearchStrategy("path"));
+        } else {
+            searchStrategy = Optional.empty();
+        }
+        return searchStrategy;
+    }
+
+    private Optional<ObfuscationReplaceStrategy> resolveReplaceStrategy() {
+        Optional<ObfuscationReplaceStrategy> replaceStrategy;
+        if ("config.value.regex".contains("${sadf}")) {
+            replaceStrategy = Optional.empty();
+        } else {
+            replaceStrategy = Optional.empty();
+        }
+        return replaceStrategy;
+    }
+
+    private Record deserialize(Record akhqRecord, String clusterId, Integer keySchemaId, Integer valueSchemaId) {
         Deserializer kafkaAvroDeserializer = this.schemaRegistryRepository.getKafkaAvroDeserializer(clusterId);
         ProtobufToJsonDeserializer protobufToJsonDeserializer = customDeserializerRepository.getProtobufToJsonDeserializer(clusterId);
+        akhqRecord = deserializeKey(akhqRecord, keySchemaId, kafkaAvroDeserializer, protobufToJsonDeserializer);
+        akhqRecord = deserializeValue(akhqRecord, valueSchemaId, kafkaAvroDeserializer, protobufToJsonDeserializer);
+        return akhqRecord;
+    }
 
-        // key deserializiation
-        if(keySchemaId != null) {
-            akhqRecord = new AvroKeySchemaRecord(akhqRecord, kafkaAvroDeserializer);
-        } else {
-            if(protobufToJsonDeserializer != null) {
-                var protoBufKey = new ProtoBufKeySchemaRecord(akhqRecord, protobufToJsonDeserializer);
-                if(protoBufKey.getKey() != null) {
-                    akhqRecord = protoBufKey;
-                }
-            }
-        }
-
-        // value deserializiation
-        if(valueSchemaId != null) {
+    private Record deserializeValue(Record akhqRecord, Integer valueSchemaId, Deserializer kafkaAvroDeserializer, ProtobufToJsonDeserializer protobufToJsonDeserializer) {
+        if (valueSchemaId != null) {
             akhqRecord = new AvroValueSchemaRecord(akhqRecord, kafkaAvroDeserializer);
         } else {
             if (protobufToJsonDeserializer != null) {
                 var protoBufValue = new ProtoBufValueSchemaRecord(akhqRecord, protobufToJsonDeserializer);
-                if(protoBufValue.getValue() != null) {
+                if (protoBufValue.getValue() != null) {
                     akhqRecord = protoBufValue;
                 }
             }
         }
+        return akhqRecord;
+    }
 
+    private Record deserializeKey(Record akhqRecord, Integer keySchemaId, Deserializer kafkaAvroDeserializer, ProtobufToJsonDeserializer protobufToJsonDeserializer) {
+        if (keySchemaId != null) {
+            akhqRecord = new AvroKeySchemaRecord(akhqRecord, kafkaAvroDeserializer);
+        } else {
+            if (protobufToJsonDeserializer != null) {
+                var protoBufKey = new ProtoBufKeySchemaRecord(akhqRecord, protobufToJsonDeserializer);
+                if (protoBufKey.getKey() != null) {
+                    akhqRecord = protoBufKey;
+                }
+            }
+        }
+        return akhqRecord;
+    }
+
+    private Record handleAvroWireFormat(ConsumerRecord<byte[], byte[]> record, Record akhqRecord, SchemaRegistryType schemaRegistryType, SchemaRegistryClient registryClient) {
+        Optional<AvroContentTypeMetaData> avroContentTypeMetaData = avroContentTypeParser.parseAvroContentTypeMetaData(record, schemaRegistryType);
+        if (avroContentTypeMetaData.isPresent()) {
+            AvroContentTypeMetaData avrometa = avroContentTypeMetaData.get();
+            akhqRecord = new AvroWireFormattedRecord(akhqRecord, registryClient, avrometa, schemaRegistryType.getMagicByte());
+        }
         return akhqRecord;
     }
 
