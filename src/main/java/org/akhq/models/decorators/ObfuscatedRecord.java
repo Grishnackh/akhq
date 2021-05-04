@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.akhq.models.Record;
 
 @Slf4j
-public class ObfuscatedRecord extends Record {
+public class ObfuscatedRecord extends RecordDecorator {
     private final ObfuscationSearchStrategy searchStrategy;
     private final ObfuscationReplaceStrategy replaceStrategy;
 
