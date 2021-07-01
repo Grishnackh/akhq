@@ -415,6 +415,8 @@ Define groups with specific roles for your users
     * `attributes.connects-filter-regexp`: Regexp list to filter Connect tasks available for current group
     * `attributes.consumer-groups-filter-regexp`: Regexp list to filter Consumer Groups available for current group
 
+:warning: `topics-filter-regexp`, `connects-filter-regexp` and `consumer-groups-filter-regexp` are only used when listing resources.   
+If you have `topics/create` or `connect/create` roles and you try to create a resource that doesn't follow the regexp, that resource **WILL** be created.
 
 3 defaults group are available :
 - `admin` with all right
@@ -612,18 +614,125 @@ akhq:
 
 The username field can be any string field, the roles field has to be a JSON array.
 
+### External roles and attributes mapping
+
+If you managed which topics (or any other resource) in an external system, you have access to 2 more implementations mechanisms to map your authenticated user (from either Local, LDAP or OIDC Authent) into AKHQ roles and attributes:
+
+If you use this mechanism, keep in mind it will take the local user's groups for local Auth, and the external groups for LDAP/OIDC (ie. this will NOT do the mapping between LDAP/OIDC and local groups)
+
+**Default configuration-based**  
+This is the current implementation and the default one (doesn't break compatibility)  
+````yaml
+akhq:
+  security:
+    default-group: no-roles
+    groups:
+      reader:
+        roles:
+          - topic/read
+        attributes:
+          topics-filter-regexp: [".*"]
+      no-roles:
+        roles: []
+    ldap: # LDAP users/groups to AKHQ groups mapping
+    oidc: # OIDC users/groups to AKHQ groups mapping
+````
+
+**REST API**  
+````yaml
+akhq:
+  security:
+    default-group: no-roles
+    rest:
+      enabled: true
+      url: https://external.service/get-roles-and-attributes
+    groups: # anything set here will not be used
+````
+
+In this mode, AKHQ will send to the ``akhq.security.rest.url`` endpoint a POST request with the following JSON :
+
+````json
+{
+  "providerType": "LDAP or OIDC or BASIC_AUTH",
+  "providerName": "OIDC provider name (OIDC only)",
+  "username": "user",
+  "groups": ["LDAP-GROUP-1", "LDAP-GROUP-2", "LDAP-GROUP-3"]
+}
+````
+and expect the following JSON as response :  
+````json
+{
+  "roles": ["topic/read", "topic/write", "..."],
+  "attributes": 
+  {
+    "topics-filter-regexp": [".*"],
+    "connects-filter-regexp": [".*"],
+    "consumer-groups-filter-regexp": [".*"]
+  }
+}
+````
+
+**Groovy API**  
+````yaml
+akhq:
+  security:
+    default-group: no-roles
+    groovy:
+      enabled: true
+      file: |
+        package org.akhq.utils;
+        class GroovyCustomClaimProvider implements ClaimProvider {
+            @Override
+            AKHQClaimResponse generateClaim(AKHQClaimRequest request) {
+                AKHQClaimResponse a = new AKHQClaimResponse();
+                a.roles = ["topic/read"]
+                a.attributes = [
+                        topicsFilterRegexp: [".*"],
+                        connectsFilterRegexp: [".*"],
+                        consumerGroupsFilterRegexp: [".*"]
+                ]
+                return a
+            }
+        }
+    groups: # anything set here will not be used
+````
+``akhq.security.groovy.file`` must be a groovy class that implements the interface ClaimProvider :  
+````java 
+package org.akhq.utils;
+public interface ClaimProvider {
+
+    AKHQClaimResponse generateClaim(AKHQClaimRequest request);
+    
+    class AKHQClaimRequest{
+        ProviderType providerType;
+        String providerName;
+        String username;
+        List<String> groups;
+    }
+    class AKHQClaimResponse {
+        private List<String> roles;
+        private Map<String,Object> attributes;
+    }
+    enum ProviderType {
+        BASIC_AUTH,
+        LDAP,
+        OIDC
+    }
+}
+````
+
 ### Debugging authentication
 
 Debugging auth can be done by increasing log level on Micronaut that handle most of the authentication part : 
 ```bash
 curl -i -X POST -H "Content-Type: application/json" \
        -d '{ "configuredLevel": "TRACE" }' \
-       http://localhost:8081/loggers/io.micronaut.security
+       http://localhost:28081/loggers/io.micronaut.security
        
        
 curl -i -X POST -H "Content-Type: application/json" \
        -d '{ "configuredLevel": "TRACE" }' \
-       http://localhost:8081/loggers/org.akhq.configs
+       http://localhost:28081/loggers/org.akhq.configs
 ```
 
 ### Server
@@ -714,7 +823,7 @@ You can discover the api endpoint here :
 * `/swagger/akhq.yml`: a full [OpenApi](https://www.openapis.org/) specifications files
 
 ## Monitoring endpoint
-Several monitoring endpoint is enabled by default and available on port `8081` only.
+Several monitoring endpoint is enabled by default and available on port `28081` only.
 
 You can disable it, change the port or restrict access only for authenticated users following micronaut configuration below.
 
@@ -731,7 +840,7 @@ You can debug all query duration from AKHQ with this commands
 ```bash
 curl -i -X POST -H "Content-Type: application/json" \
        -d '{ "configuredLevel": "TRACE" }' \
-       http://localhost:8081/loggers/org.akhq
+       http://localhost:28081/loggers/org.akhq
 ```
 
 ## Development Environment
